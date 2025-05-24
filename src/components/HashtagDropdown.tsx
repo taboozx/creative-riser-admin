@@ -5,10 +5,14 @@ interface Props {
   onSelect: (tags: string[]) => void;
 }
 
+interface HashtagItem {
+  tag: string;
+  count: number;
+}
+
 export default function HashtagDropdown({ onSelect }: Props) {
-  const [tags, setTags] = useState<string[]>([]);
+  const [tags, setTags] = useState<HashtagItem[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
-  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     axios.get("http://localhost:8000/hashtags")
@@ -33,32 +37,41 @@ export default function HashtagDropdown({ onSelect }: Props) {
     onSelect(updated);
   };
 
-  return (
-    <div className="relative">
-      <label className="block text-sm font-medium mb-1">Actual Hashtags</label>
-      <button
-        onClick={() => setOpen(!open)}
-        className="bg-gray-800 px-3 py-2 rounded w-full text-left text-white"
-      >
-        {selected.length > 0 ? selected.map(tag => `#${tag}`).join(", ") : "Select hashtags..."}
-      </button>
+  const getStyle = (count: number, selected: boolean) => {
+    let base = "px-2 py-1 rounded cursor-pointer transition-all duration-150 ";
+    let color = "";
+    if (count >= 15) color = selected ? "bg-red-600 text-white" : "bg-red-500 text-white hover:bg-red-600";
+    else if (count >= 10) color = selected ? "bg-orange-600 text-white" : "bg-orange-500 text-white hover:bg-orange-600";
+    else if (count >= 5) color = selected ? "bg-yellow-600 text-white" : "bg-yellow-500 text-white hover:bg-yellow-600";
+    else color = selected ? "bg-gray-600 text-white" : "bg-gray-500 text-white hover:bg-gray-600";
+    return base + color;
+  };
 
-      {open && (
-        <ul className="absolute z-10 mt-1 max-h-60 overflow-y-auto bg-gray-800 rounded shadow-lg w-full">
-          {tags.map((tag) => (
-            <li
-              key={tag}
-              onClick={() => toggleTag(tag)}
-              className={`px-3 py-2 hover:bg-purple-600 cursor-pointer text-sm text-white ${selected.includes(tag) ? "bg-purple-700" : ""}`}
-            >
-              #{tag}
-            </li>
-          ))}
-        </ul>
-      )}
+  const getFontSize = (count: number) => {
+    if (count >= 15) return "text-2xl";
+    if (count >= 10) return "text-xl";
+    if (count >= 5) return "text-lg";
+    return "text-sm";
+  };
+
+  return (
+    <div>
+      <label className="block text-sm font-medium mb-1">Actual Hashtags</label>
+
+      <div className="flex flex-wrap gap-2 bg-gray-800 p-3 rounded">
+        {tags.map(({ tag, count }) => (
+          <button
+            key={tag}
+            onClick={() => toggleTag(tag)}
+            className={`${getStyle(count, selected.includes(tag))} ${getFontSize(count)}`}
+          >
+            #{tag}
+          </button>
+        ))}
+      </div>
 
       {selected.length > 0 && (
-        <div className="flex flex-wrap gap-2 mt-2">
+        <div className="flex flex-wrap gap-2 mt-3">
           {selected.map(tag => (
             <span key={tag} className="bg-purple-600 text-white px-2 py-1 rounded-full text-xs flex items-center">
               #{tag}
