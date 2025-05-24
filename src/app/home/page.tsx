@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import axios from "axios";
+import HashtagDropdown from "../../components/HashtagDropdown";
 
 export default function HomePage() {
   const [type, setType] = useState("photo");
@@ -90,6 +91,17 @@ export default function HomePage() {
     }
   }, [status]);
 
+  const handleHashtagUpdate = (tags: string[]) => {
+    // удалим все старые теги из описания
+    const cleaned = description
+      .split(" ")
+      .filter((word) => !word.startsWith("#"))
+      .join(" ").trim();
+
+    const newDesc = `${cleaned} ${tags.map(t => `#${t}`).join(" ")}`.trim();
+    setDescription(newDesc);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && title.trim() && file && !loading) {
       e.preventDefault();
@@ -160,6 +172,8 @@ export default function HomePage() {
           onChange={(e) => setDescription(e.target.value)}
           className="bg-gray-800 p-2 rounded w-full h-32"
         />
+
+        <HashtagDropdown onSelect={handleHashtagUpdate} />
 
         <button
           className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded"
