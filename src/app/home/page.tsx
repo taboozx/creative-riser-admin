@@ -43,7 +43,8 @@ export default function HomePage() {
   };
 
   const handlePublish = async () => {
-    if (!file || !title.trim()) return;
+    console.log("🟢 handlePublish CALLED");
+    
     setLoading(true);
     setStatus("idle");
     setProgress(0);
@@ -53,7 +54,9 @@ export default function HomePage() {
     formData.append("type", type);
     formData.append("title", title);
     formData.append("description", description);
-    formData.append("file", file);
+    if (file) {
+      formData.append("file", file);
+    }
 
     try {
       const res = await axios.post("http://localhost:8000/publish/", formData, {
