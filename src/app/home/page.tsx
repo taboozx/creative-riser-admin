@@ -3,60 +3,61 @@
 import { useRef, useState, useEffect } from "react";
 import axios from "axios";
 import HashtagDropdown from "../../components/HashtagDropdown";
+import clsx from "clsx";
 
 export default function HomePage() {
-  const [type, setType] = useState("photo");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [file, setFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [responseMessage, setResponseMessage] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const statusRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = event.target.files?.[0];
-    if (selected) {
-      setFile(selected);
-      setPreviewUrl(URL.createObjectURL(selected));
-    }
+    if (!event.target.files) return;
+    const selectedFiles = Array.from(event.target.files);
+    setFiles((prev) => [...prev, ...selectedFiles]);
+    setPreviewUrls((prev) => [
+      ...prev,
+      ...selectedFiles.map((file) => URL.createObjectURL(file))
+    ]);
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    const dropped = e.dataTransfer.files?.[0];
-    if (dropped) {
-      setFile(dropped);
-      setPreviewUrl(URL.createObjectURL(dropped));
-    }
+    setIsDragOver(false);
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    setFiles((prev) => [...prev, ...droppedFiles]);
+    setPreviewUrls((prev) => [
+      ...prev,
+      ...droppedFiles.map((file) => URL.createObjectURL(file))
+    ]);
   };
 
-  const clearPreview = (e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    setFile(null);
-    setPreviewUrl(null);
-    titleRef.current?.focus();
+  const removeFile = (index: number) => {
+    URL.revokeObjectURL(previewUrls[index]);
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+    setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handlePublish = async () => {
-    console.log("🟢 handlePublish CALLED");
-    
     setLoading(true);
     setStatus("idle");
     setProgress(0);
     setResponseMessage(null);
 
     const formData = new FormData();
-    formData.append("type", type);
     formData.append("title", title);
     formData.append("description", description);
-    if (file) {
-      formData.append("file", file);
-    }
+    files.forEach((file) => {
+      formData.append("media[]", file);
+    });
 
     try {
       const res = await axios.post("http://localhost:8000/publish/", formData, {
@@ -73,7 +74,8 @@ export default function HomePage() {
       if (res.status === 200) {
         setStatus("success");
         setResponseMessage(JSON.stringify(res.data));
-        clearPreview();
+        setFiles([]);
+        setPreviewUrls([]);
         setTitle("");
         setDescription("");
       } else {
@@ -95,7 +97,6 @@ export default function HomePage() {
   }, [status]);
 
   const handleHashtagUpdate = (tags: string[]) => {
-    // удалим все старые теги из описания
     const cleaned = description
       .split(" ")
       .filter((word) => !word.startsWith("#"))
@@ -106,7 +107,7 @@ export default function HomePage() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && title.trim() && file && !loading) {
+    if (e.key === "Enter" && title.trim() && files.length > 0 && !loading) {
       e.preventDefault();
       handlePublish();
     }
@@ -117,47 +118,56 @@ export default function HomePage() {
       <div className="w-full max-w-xl space-y-6" onKeyDown={handleKeyDown}>
         <h1 className="text-3xl font-bold text-purple-400">Creative Riser Publisher</h1>
 
-        <select
-          value={type}
-          onChange={(e) => setType(e.target.value)}
-          className="bg-gray-800 p-2 rounded w-full"
-        >
-          <option value="photo">Photo</option>
-          <option value="video">Video</option>
-        </select>
-
         <div
           onDrop={handleDrop}
-          onDragOver={(e) => e.preventDefault()}
-          className="bg-gray-800 border border-dashed border-gray-600 p-6 rounded text-center cursor-pointer relative"
-        >
-          {previewUrl ? (
-            <div className="relative">
-              {type === "photo" ? (
-                <img src={previewUrl} alt="preview" className="max-h-48 mx-auto" />
-              ) : (
-                <video src={previewUrl} controls className="max-h-48 mx-auto" />
-              )}
-              <button
-                onClick={clearPreview}
-                className="absolute top-2 right-2 bg-gray-800 text-white text-sm w-6 h-6 flex items-center justify-center rounded-full hover:bg-red-600 z-10"
-                title="Clear"
-                type="button"
-              >
-                ×
-              </button>
-            </div>
-          ) : (
-            <p>Drag & drop file here or click to select</p>
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragOver(true);
+          }}
+          onDragLeave={() => setIsDragOver(false)}
+          className={clsx(
+            "border border-dashed p-6 rounded text-center space-y-4 transition-colors",
+            isDragOver ? "border-purple-500 bg-gray-700" : "border-gray-600 bg-gray-800"
           )}
+        >
+          <div className="flex justify-center">
+            <label className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded cursor-pointer">
+              Select files
+              <input
+                type="file"
+                onChange={handleFileChange}
+                multiple
+                accept="image/*,video/*"
+                className="hidden"
+              />
+            </label>
+          </div>
 
-          <label className="absolute inset-0 cursor-pointer">
-            <input
-              type="file"
-              onChange={handleFileChange}
-              className="opacity-0 w-full h-full"
-            />
-          </label>
+          {files.length > 0 && (
+            <div className="grid grid-cols-2 gap-4">
+              {files.map((file, index) => (
+                <div key={index} className="relative">
+                  {file.type.startsWith("image/") ? (
+                    <img src={previewUrls[index]} className="max-h-48 mx-auto rounded" />
+                  ) : (
+                    <video src={previewUrls[index]} controls className="max-h-48 mx-auto rounded" />
+                  )}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      removeFile(index);
+                    }}
+                    className="absolute top-2 right-2 bg-gray-800 text-white text-sm w-6 h-6 flex items-center justify-center rounded-full hover:bg-red-600"
+                    type="button"
+                  >
+                    ×
+                  </button>
+                  <p className="text-xs mt-1 break-all">{file.name}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <input
