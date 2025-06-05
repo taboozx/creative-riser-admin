@@ -3,48 +3,20 @@
 import { useRef, useState, useEffect } from "react";
 import axios from "axios";
 import HashtagDropdown from "../../components/HashtagDropdown";
-import clsx from "clsx";
+import MediaUploader from "../../components/MediaUploader";
+
 
 export default function HomePage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [files, setFiles] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [responseMessage, setResponseMessage] = useState<string | null>(null);
-  const [isDragOver, setIsDragOver] = useState(false);
 
   const statusRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!event.target.files) return;
-    const selectedFiles = Array.from(event.target.files);
-    setFiles((prev) => [...prev, ...selectedFiles]);
-    setPreviewUrls((prev) => [
-      ...prev,
-      ...selectedFiles.map((file) => URL.createObjectURL(file))
-    ]);
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    const droppedFiles = Array.from(e.dataTransfer.files);
-    setFiles((prev) => [...prev, ...droppedFiles]);
-    setPreviewUrls((prev) => [
-      ...prev,
-      ...droppedFiles.map((file) => URL.createObjectURL(file))
-    ]);
-  };
-
-  const removeFile = (index: number) => {
-    URL.revokeObjectURL(previewUrls[index]);
-    setFiles((prev) => prev.filter((_, i) => i !== index));
-    setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
-  };
 
   const handlePublish = async () => {
     setLoading(true);
@@ -57,6 +29,15 @@ export default function HomePage() {
     formData.append("description", description);
     files.forEach((file) => {
       formData.append("media[]", file);
+    });
+
+    console.log("📤 Sending POST request:", {
+      url: "http://localhost:8000/publish/",
+      body: {
+        title,
+        description,
+        files: files.map((f) => f.name),
+      },
     });
 
     try {
@@ -72,17 +53,19 @@ export default function HomePage() {
         }
       });
       if (res.status === 200) {
+        console.log("✅ POST success:", res.data);
         setStatus("success");
         setResponseMessage(JSON.stringify(res.data));
         setFiles([]);
-        setPreviewUrls([]);
         setTitle("");
         setDescription("");
       } else {
+        console.error("❌ POST failed with status:", res.status);
         setStatus("error");
         setResponseMessage(res.statusText);
       }
     } catch (err: any) {
+      console.error("❌ POST error:", err);
       setStatus("error");
       setResponseMessage(err.message || "Unknown error");
     } finally {
@@ -118,57 +101,7 @@ export default function HomePage() {
       <div className="w-full max-w-xl space-y-6" onKeyDown={handleKeyDown}>
         <h1 className="text-3xl font-bold text-purple-400">Creative Riser Publisher</h1>
 
-        <div
-          onDrop={handleDrop}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setIsDragOver(true);
-          }}
-          onDragLeave={() => setIsDragOver(false)}
-          className={clsx(
-            "border border-dashed p-6 rounded text-center space-y-4 transition-colors",
-            isDragOver ? "border-purple-500 bg-gray-700" : "border-gray-600 bg-gray-800"
-          )}
-        >
-          <div className="flex justify-center">
-            <label className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded cursor-pointer">
-              Select files
-              <input
-                type="file"
-                onChange={handleFileChange}
-                multiple
-                accept="image/*,video/*"
-                className="hidden"
-              />
-            </label>
-          </div>
-
-          {files.length > 0 && (
-            <div className="grid grid-cols-2 gap-4">
-              {files.map((file, index) => (
-                <div key={index} className="relative">
-                  {file.type.startsWith("image/") ? (
-                    <img src={previewUrls[index]} className="max-h-48 mx-auto rounded" />
-                  ) : (
-                    <video src={previewUrls[index]} controls className="max-h-48 mx-auto rounded" />
-                  )}
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      removeFile(index);
-                    }}
-                    className="absolute top-2 right-2 bg-gray-800 text-white text-sm w-6 h-6 flex items-center justify-center rounded-full hover:bg-red-600"
-                    type="button"
-                  >
-                    ×
-                  </button>
-                  <p className="text-xs mt-1 break-all">{file.name}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <MediaUploader files={files} setFiles={setFiles} />
 
         <input
           ref={titleRef}
