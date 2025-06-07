@@ -96,11 +96,19 @@ export default function HomePage() {
 
   const handleHashtagUpdate = (tags: string[]) => {
     const cleaned = description
-      .split(" ")
-      .filter((word) => !word.startsWith("#"))
-      .join(" ").trim();
+      .replace(/\s*#\S+/g, "")
+      .trimEnd();
 
-    const newDesc = `${cleaned} ${tags.map(t => `#${t}`).join(" ")}`.trim();
+    if (tags.length === 0) {
+      setDescription(cleaned);
+      return;
+    }
+
+    const hashtags = tags.map(t => `#${t}`).join(" ");
+    const newDesc = cleaned
+      ? `${cleaned}\n\n${hashtags}`
+      : hashtags;
+
     setDescription(newDesc);
   };
 
