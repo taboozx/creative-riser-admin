@@ -10,6 +10,11 @@ export default function HomePage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [files, setFiles] = useState<File[]>([]);
+
+  useEffect(() => {
+    console.log("📁 Current files in state:", files);
+  }, [files]);
+
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
@@ -25,10 +30,20 @@ export default function HomePage() {
     setResponseMessage(null);
 
     const formData = new FormData();
+    console.log("📁 files before formData:", files);
     formData.append("title", title);
     formData.append("description", description);
     files.forEach((file) => {
       formData.append("media[]", file);
+    });
+
+    console.log("📦 FormData contents:");
+    Array.from(formData.entries()).forEach(([key, value]) => {
+      if (value instanceof File) {
+        console.log(`🖼 ${key}: ${value.name} (${value.type}, ${value.size} bytes)`);
+      } else {
+        console.log(`📝 ${key}: ${value}`);
+      }
     });
 
     console.log("📤 Sending POST request:", {
