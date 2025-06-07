@@ -33,9 +33,9 @@ export default function HomePage() {
     console.log("📁 files before formData:", files);
     formData.append("title", title);
     formData.append("description", description);
-    if (files[0]) {
-      formData.append("file", files[0]);
-    }
+    files.forEach((file) => {
+      formData.append("media", file);
+    });
 
     console.log("📦 FormData contents:");
     Array.from(formData.entries()).forEach(([key, value]) => {
@@ -51,7 +51,7 @@ export default function HomePage() {
       body: {
         title,
         description,
-        files: files.map((f) => f.name),
+        media: files.map((f) => f.name),
       },
     });
 
