@@ -25,17 +25,17 @@ export default function MediaUploader({ files, setFiles }: Props) {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
-    const newFiles = Array.from(e.target.files);
-    setFiles((prev) => [...prev, ...newFiles]);
-    console.log("📥 Selected files:", newFiles.map((f) => f.name));
+    const newFiles = Array.from(e.target.files).slice(0, 1);
+    setFiles(newFiles);
+    console.log("📥 Selected file:", newFiles.map((f) => f.name));
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragOver(false);
-    const droppedFiles = Array.from(e.dataTransfer.files);
-    setFiles((prev) => [...prev, ...droppedFiles]);
-    console.log("📥 Dropped files:", droppedFiles.map((f) => f.name));
+    const droppedFiles = Array.from(e.dataTransfer.files).slice(0, 1);
+    setFiles(droppedFiles);
+    console.log("📥 Dropped file:", droppedFiles.map((f) => f.name));
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -71,7 +71,6 @@ export default function MediaUploader({ files, setFiles }: Props) {
         <input
           type="file"
           accept="image/*,video/*"
-          multiple
           onChange={handleFileChange}
           className="hidden"
         />

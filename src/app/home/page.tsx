@@ -27,9 +27,9 @@ export default function HomePage() {
     const formData = new FormData();
     formData.append("title", title);
     formData.append("description", description);
-    files.forEach((file) => {
-      formData.append("media[]", file);
-    });
+    if (files[0]) {
+      formData.append("file", files[0]);
+    }
 
     console.log("📤 Sending POST request:", {
       url: "http://localhost:8000/publish/",
