@@ -12,12 +12,11 @@ export default function MediaUploader({ files, setFiles }: Props) {
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  // Генерация preview при изменении файлов
+  // Generate previews when files change
   useEffect(() => {
     const urls = files.map((file) => URL.createObjectURL(file));
     setPreviewUrls(urls);
 
-    // Очистка ссылок
     return () => {
       urls.forEach((url) => URL.revokeObjectURL(url));
     };
@@ -57,9 +56,7 @@ export default function MediaUploader({ files, setFiles }: Props) {
     <div
       className={clsx(
         "p-4 border-2 rounded-2xl shadow-md transition-colors",
-        isDragOver
-          ? "border-purple-500 bg-gray-800"
-          : "border-gray-600 bg-gray-900"
+        isDragOver ? "border-purple-500 bg-gray-800" : "border-gray-600 bg-gray-900"
       )}
       onDrop={handleDrop}
       onDragOver={handleDragOver}
@@ -80,7 +77,7 @@ export default function MediaUploader({ files, setFiles }: Props) {
 
       <div className="grid grid-cols-3 gap-2 mt-4">
         {files.map((file, index) => {
-          const previewUrl = URL.createObjectURL(file); // 👈 создаём тут же
+          const previewUrl = previewUrls[index];
 
           return (
             <div key={index} className="relative p-2 border rounded-lg bg-gray-800">

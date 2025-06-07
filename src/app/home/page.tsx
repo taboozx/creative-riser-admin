@@ -28,7 +28,7 @@ export default function HomePage() {
     formData.append("title", title);
     formData.append("description", description);
     files.forEach((file) => {
-      formData.append("media[]", file);
+      formData.append("file", file); // сервер ожидает "file"
     });
 
     console.log("📤 Sending POST request:", {
@@ -90,7 +90,7 @@ export default function HomePage() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && title.trim() && files.length > 0 && !loading) {
+    if (e.key === "Enter" && title.trim() && !loading) {
       e.preventDefault();
       handlePublish();
     }
