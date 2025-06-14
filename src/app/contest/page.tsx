@@ -28,11 +28,19 @@ export default function ContestPage() {
     setWinners(null);
 
     try {
-      const res = await axios.post("http://localhost:8000/contest/run", {
-        message,
-        days: parseInt(days) || 0,
-        winners_count: parseInt(winnersCount) || 0,
-      });
+      const res = await axios.post(
+        "http://localhost:8000/contest/run",
+        {
+          message,
+          days: parseInt(days) || 0,
+          winners_count: parseInt(winnersCount) || 0,
+        },
+        {
+          headers: {
+            Authorization: "Bearer supersecrettoken",
+          },
+        }
+      );
       setWinners(res.data.winners);
     } catch (err: any) {
       console.error("Contest run failed:", err);
