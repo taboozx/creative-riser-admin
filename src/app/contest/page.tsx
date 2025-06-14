@@ -10,11 +10,17 @@ interface Winner {
 
 export default function ContestPage() {
   const [message, setMessage] = useState("");
-  const [days, setDays] = useState(7);
-  const [winnersCount, setWinnersCount] = useState(1);
+  const [days, setDays] = useState<string>("");
+  const [winnersCount, setWinnersCount] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [winners, setWinners] = useState<Winner[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const placeholderUsernames = Array(
+    Math.max(1, parseInt(winnersCount) || 1)
+  )
+    .fill("@username")
+    .join(" ");
 
   const runContest = async () => {
     setLoading(true);
@@ -24,8 +30,8 @@ export default function ContestPage() {
     try {
       const res = await axios.post("http://localhost:8000/contest/run", {
         message,
-        days,
-        winners_count: winnersCount,
+        days: parseInt(days) || 0,
+        winners_count: parseInt(winnersCount) || 0,
       });
       setWinners(res.data.winners);
     } catch (err: any) {
@@ -43,7 +49,7 @@ export default function ContestPage() {
       <div className="space-y-4 max-w-lg">
         <input
           type="text"
-          placeholder="Message with @username"
+          placeholder={`Message with ${placeholderUsernames}`}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           className="bg-gray-800 p-2 rounded w-full"
@@ -53,7 +59,7 @@ export default function ContestPage() {
           type="number"
           placeholder="Days"
           value={days}
-          onChange={(e) => setDays(parseInt(e.target.value) || 0)}
+          onChange={(e) => setDays(e.target.value)}
           className="bg-gray-800 p-2 rounded w-full"
         />
 
@@ -61,7 +67,7 @@ export default function ContestPage() {
           type="number"
           placeholder="Winners count"
           value={winnersCount}
-          onChange={(e) => setWinnersCount(parseInt(e.target.value) || 0)}
+          onChange={(e) => setWinnersCount(e.target.value)}
           className="bg-gray-800 p-2 rounded w-full"
         />
 
